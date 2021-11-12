@@ -43,7 +43,7 @@ services:
       - fgpe-moodle-nw
 
   moodle:
-    image: erseco/alpine-moodle
+    image: fgpe/moodle
     restart: unless-stopped
     environment:
       SITE_URL: ${MOODLE_URL}

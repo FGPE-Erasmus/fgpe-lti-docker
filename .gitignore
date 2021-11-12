@@ -1,0 +1,5 @@
+.env
+volumes/lti
+volumes/lti-db/data
+volumes/moodle/data
+volumes/moodle-db/data

@@ -1,0 +1,90 @@
+version: '3'
+services:
+
+  lti:
+    # build:
+    #   context: .
+    #   dockerfile: ./Dockerfile
+    image: fgpe/lti-tool
+    restart: unless-stopped
+    environment:
+      MOODLE_URL: ${MOODLE_URL}
+      LTI_TOOL_PORT: 3001
+      LTI_TOOL_KEY: ${LTI_TOOL_KEY}
+      LTI_TOOL_NAME: ${LTI_TOOL_NAME}
+      LTI_TOOL_CLIENT_ID: ${LTI_TOOL_CLIENT_ID}
+      LTI_TOOL_DB_HOST: lti-db
+      LTI_TOOL_DB_PORT: 27017
+      LTI_TOOL_DB_NAME: ${LTI_TOOL_DB_NAME}
+      LTI_TOOL_DB_AUTH: ${LTI_TOOL_DB_AUTH}
+      LTI_TOOL_DB_USERNAME: ${LTI_TOOL_DB_USERNAME}
+      LTI_TOOL_DB_PASSWORD: ${LTI_TOOL_DB_PASSWORD}
+    ports:
+      - "3001:3001"
+    depends_on:
+      - lti-db
+    networks:
+      - fgpe-moodle-nw
+
+  lti-db:
+    image: mongo:latest
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: ${LTI_TOOL_DB_NAME}
+      MONGO_INITDB_ROOT_USERNAME: ${LTI_TOOL_DB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${LTI_TOOL_DB_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./volumes/lti-db/data:/data/db
+    depends_on:
+      - moodle
+    networks:
+      - fgpe-moodle-nw
+
+  moodle:
+    image: erseco/alpine-moodle
+    restart: unless-stopped
+    environment:
+      SITE_URL: ${MOODLE_URL}
+      MOODLE_SITE_NAME: ${MOODLE_SITE_NAME}
+      MOODLE_EMAIL: ${MOODLE_EMAIL}
+      MOODLE_USERNAME: ${MOODLE_USERNAME}
+      MOODLE_PASSWORD: ${MOODLE_PASSWORD}
+      DB_TYPE: pgsql
+      DB_HOST: moodle-db
+      DB_PORT: 5432
+      DB_NAME: ${MOODLE_DB_NAME}
+      DB_USER: ${MOODLE_DB_USER}
+      DB_PASS: ${MOODLE_DB_PASSWORD}
+      ALLOW_EMPTY_PASSWORD: "no"
+    ports:
+      - '80:8080'
+      - '8444:8443'
+    volumes:
+      - moodle_data:/var/www/moodledata
+    depends_on:
+      - moodle-db
+    networks:
+      - fgpe-moodle-nw
+
+  moodle-db:
+    image: postgres:alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${MOODLE_DB_NAME}
+      POSTGRES_USER: ${MOODLE_DB_USER}
+      POSTGRES_PASSWORD: ${MOODLE_DB_PASSWORD}
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./volumes/moodle-db/data:/var/lib/postgresql/data
+    networks:
+      - fgpe-moodle-nw
+
+volumes:
+  moodle_data:
+    driver: local
+
+networks:
+  fgpe-moodle-nw:
